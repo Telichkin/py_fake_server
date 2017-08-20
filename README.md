@@ -11,8 +11,8 @@ from py_fake_server import FakeServer, expect_that
 server = FakeServer(host="localhost", port=8081)
 server.start()
 
-server.\
-    on_("post", "/data").\
+server. \
+    on_("post", "/data"). \
     response(status=200, body="text", content_type="text/plain")
 
 response = requests.post(server.base_uri + "/data", json={"name": "Fake!"})
