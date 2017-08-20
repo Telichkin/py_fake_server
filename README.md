@@ -17,7 +17,7 @@ server.\
 
 response = requests.post(server.base_uri + "/data", json={"name": "Fake!"})
 assert response.status_code == 200
-assert resonse.text == "text"
+assert response.text == "text"
 
 expect_that(server). \
   was_requested("post", "/data"). \
