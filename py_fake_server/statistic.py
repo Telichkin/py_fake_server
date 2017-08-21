@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Optional, List, Callable, Dict
 
@@ -88,6 +89,26 @@ class Statistic:
             requested_time = self._current_request_index + 1
             self._error_messages.append(f"\nFor the {requested_time} time: with body {body.__repr__()}.\n"
                                         f"But for the {requested_time} time: body was {actual_body.__repr__()}.")
+        return self
+
+    def with_json(self, json_dict: dict) -> "Statistic":
+        body = json.dumps(json_dict, sort_keys=True)
+
+        actual_body = self.get_current_request().body.decode("utf-8", errors="skip")
+        try:
+            actual_json_dict = json.loads(actual_body)
+        except json.JSONDecodeError:
+            requested_time = self._current_request_index + 1
+            self._error_messages.append(f"\nFor the {requested_time} time: with json {body}.\n"
+                                        f"But for the {requested_time} time: json was corrupted "
+                                        f"{actual_body.__repr__()}.")
+            return self
+
+        actual_body = json.dumps(actual_json_dict, sort_keys=True)
+        if body != actual_body:
+            requested_time = self._current_request_index + 1
+            self._error_messages.append(f"\nFor the {requested_time} time: with json {body}.\n"
+                                        f"But for the {requested_time} time: json was {actual_body}.")
         return self
 
     def with_content_type(self, content_type: str) -> "Statistic":

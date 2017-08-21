@@ -462,3 +462,43 @@ def test_raise_exception_if_for_the_nth_time_not_specify_in_second_expectation(s
         expect_that(server). \
             was_requested("delete", "/hosts/1"). \
             with_headers({"other": "value", "try-delete": "true"})
+
+
+def test_compare_unordered_json_body(server: FakeServer):
+    requests.post(server.base_uri + "/songs", json={"artist": "Powerwolf", "album": "Blessed & Possessed"})
+
+    expect_that(server). \
+        was_requested("post", "/songs"). \
+        for_the_first_time(). \
+        with_json({"album": "Blessed & Possessed", "artist": "Powerwolf"}). \
+        check()
+
+
+def test_compare_unordered_json_body_raise_exception(server: FakeServer):
+    requests.post(server.base_uri + "/songs", json={"artist": "Powerwolf", "album": "Blessed & Possessed"})
+
+    with pytest.raises(AssertionError) as error:
+        expect_that(server). \
+            was_requested("post", "/songs"). \
+            for_the_first_time(). \
+            with_json({"album": "Blood of the Saints", "artist": "Powerwolf"}). \
+            check()
+
+    assert str(error.value) == ('Expect that server was requested with [POST] http://localhost:8081/songs.\n'
+                                'For the 1 time: with json {"album": "Blood of the Saints", "artist": "Powerwolf"}.\n'
+                                'But for the 1 time: json was {"album": "Blessed & Possessed", "artist": "Powerwolf"}.')
+
+
+def test_compare_with_not_incoming_json_raise_exception(server: FakeServer):
+    requests.post(server.base_uri + "/songs", data="Blessed & Possessed")
+
+    with pytest.raises(AssertionError) as error:
+        expect_that(server). \
+            was_requested("post", "/songs"). \
+            for_the_first_time(). \
+            with_json({"album": "Blood of the Saints", "artist": "Powerwolf"}). \
+            check()
+
+    assert str(error.value) == ('Expect that server was requested with [POST] http://localhost:8081/songs.\n'
+                                'For the 1 time: with json {"album": "Blood of the Saints", "artist": "Powerwolf"}.\n'
+                                'But for the 1 time: json was corrupted \'Blessed & Possessed\'.')

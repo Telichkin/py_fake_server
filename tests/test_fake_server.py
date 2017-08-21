@@ -12,8 +12,8 @@ from py_fake_server import FakeServer
                           ("/204", 204),
                           ("/200", 200)])
 def test_add_simple_handler(server: FakeServer, method: str, route: str, status: int):
-    server.\
-        on_(method, route).\
+    server. \
+        on_(method, route). \
         response(status=status)
 
     response = requests.request(method, server.base_uri + route)
@@ -30,12 +30,12 @@ def test_add_two_simple_handlers_with_same_route(server: FakeServer,
                                                  methods: List[str],
                                                  routes: List[str],
                                                  statuses: List[int]):
-    server.\
-        on_(methods[0], routes[0]).\
+    server. \
+        on_(methods[0], routes[0]). \
         response(status=statuses[0])
 
-    server.\
-        on_(methods[1], routes[1]).\
+    server. \
+        on_(methods[1], routes[1]). \
         response(status=statuses[1])
 
     response_0 = requests.request(methods[0], server.base_uri + routes[0])
@@ -45,8 +45,8 @@ def test_add_two_simple_handlers_with_same_route(server: FakeServer,
 
 
 def test_handler_returns_body(server: FakeServer):
-    server.\
-        on_("get", "/try/body").\
+    server. \
+        on_("get", "/try/body"). \
         response(status=200, body="Wow! So Body!")
 
     response = requests.get(server.base_uri + "/try/body")
@@ -54,8 +54,8 @@ def test_handler_returns_body(server: FakeServer):
 
 
 def test_handler_returns_content_type(server: FakeServer):
-    server.\
-        on_("post", "/content").\
+    server. \
+        on_("post", "/content"). \
         response(status=200, body='{"json": "try"}', content_type="application/json")
 
     response = requests.post(server.base_uri + "/content")
@@ -63,8 +63,8 @@ def test_handler_returns_content_type(server: FakeServer):
 
 
 def test_handler_returns_headers(server: FakeServer):
-    server.\
-        on_("post", "/data").\
+    server. \
+        on_("post", "/data"). \
         response(status=200, body="text", headers={"retry-after": "500"})
 
     response = requests.post(server.base_uri + "/data")
@@ -73,16 +73,16 @@ def test_handler_returns_headers(server: FakeServer):
 
 def test_handler_exception_when_content_type_explicit_and_in_headers(server: FakeServer):
     with pytest.raises(AttributeError) as error:
-        server.\
-            on_("post", "/data").\
+        server. \
+            on_("post", "/data"). \
             response(status=200, body="lol", content_type="text/plain", headers={"Content-Type": "text/plain"})
 
     assert str(error.value) == "Explicit Content-Type and Content-Type in headers in one response"
 
 
 def test_handler_returns_cookies(server: FakeServer):
-    server.\
-        on_("get", "/users").\
+    server. \
+        on_("get", "/users"). \
         response(status=200, body="lol", cookies={"token": "new_token"})
 
     response = requests.get(server.base_uri + "/users")
@@ -91,18 +91,18 @@ def test_handler_returns_cookies(server: FakeServer):
 
 def test_handler_exception_when_cookies_explicit_and_in_headers(server: FakeServer):
     with pytest.raises(AttributeError) as error:
-        server.\
-            on_("get", "/movies/1").\
+        server. \
+            on_("get", "/movies/1"). \
             response(status=204, cookies={"token": "token"}, headers={"cookies": "token=token"})
 
     assert str(error.value) == "Explicit Cookies and Cookies in headers in one response"
 
 
 def test_handler_set_for_many_times(server: FakeServer):
-    server.\
-        on_("get", "/users").\
-        response(status=200).\
-        then().\
+    server. \
+        on_("get", "/users"). \
+        response(status=200). \
+        then(). \
         response(status=204)
 
     response_0 = requests.get(server.base_uri + "/users")
@@ -112,8 +112,8 @@ def test_handler_set_for_many_times(server: FakeServer):
 
 
 def test_set_handler_many_times(server: FakeServer):
-    server.\
-        on_("get", "/users").\
+    server. \
+        on_("get", "/users"). \
         response(status=204)
 
     server. \
@@ -125,8 +125,8 @@ def test_set_handler_many_times(server: FakeServer):
 
 
 def test_handler_calls_many_times(server: FakeServer):
-    server.\
-        on_("patch", "/channels").\
+    server. \
+        on_("patch", "/channels"). \
         response(status=204)
 
     response_0 = requests.patch(server.base_uri + "/channels")
@@ -136,8 +136,8 @@ def test_handler_calls_many_times(server: FakeServer):
 
 
 def test_handler_set_number_of_calls_explicitly(server: FakeServer):
-    server.\
-        on_("get", "/games").\
+    server. \
+        on_("get", "/games"). \
         response(status=200).once()
 
     response_0 = requests.get(server.base_uri + "/games")
@@ -149,10 +149,10 @@ def test_handler_set_number_of_calls_explicitly(server: FakeServer):
 
 
 def test_handler_two_responses_both_called_once(server: FakeServer):
-    server.\
-        on_("get", "/games").\
-        response(status=200).once().\
-        then().\
+    server. \
+        on_("get", "/games"). \
+        response(status=200).once(). \
+        then(). \
         response(status=204).once()
 
     response_0 = requests.get(server.base_uri + "/games")
@@ -166,8 +166,8 @@ def test_handler_two_responses_both_called_once(server: FakeServer):
 
 
 def test_handler_called_twice(server: FakeServer):
-    server.\
-        on_("post", "/songs").\
+    server. \
+        on_("post", "/songs"). \
         response(status=204).twice()
 
     response_0 = requests.post(server.base_uri + "/songs")
@@ -181,8 +181,8 @@ def test_handler_called_twice(server: FakeServer):
 
 
 def test_handler_called_nth_times(server: FakeServer):
-    server.\
-        on_("patch", "/songs").\
+    server. \
+        on_("patch", "/songs"). \
         response(status=204)._3_times()
 
     response_0 = requests.patch(server.base_uri + "/songs")
@@ -207,8 +207,8 @@ def test_handler_called_nth_times_with_wrong_syntax(server: FakeServer):
 
 
 def test_handler_called_one_time_other_syntax(server: FakeServer):
-    server.\
-        on_("get", "/plays").\
+    server. \
+        on_("get", "/plays"). \
         response(status=200, body="Wow!")._1_times()
 
     response_0 = requests.get(server.base_uri + "/plays")
@@ -227,8 +227,8 @@ def test_missing_route_returns_500(server: FakeServer):
 
 
 def test_handler_204_without_body(server: FakeServer):
-    server.\
-        on_("delete", "/user/1").\
+    server. \
+        on_("delete", "/user/1"). \
         response(status=204)
 
     response = requests.delete(server.base_uri + "/user/1")
@@ -238,8 +238,8 @@ def test_handler_204_without_body(server: FakeServer):
 
 def test_add_response_with_204_and_body_raise_exception(server: FakeServer):
     with pytest.raises(AttributeError) as error:
-        server.\
-            on_("delete", "/error").\
+        server. \
+            on_("delete", "/error"). \
             response(status=204, body="some body")
 
     assert str(error.value) == "status == 204 and body != None in one response"
