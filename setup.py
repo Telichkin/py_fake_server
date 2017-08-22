@@ -30,8 +30,8 @@ requires = [
 ]
 
 tests_require = [
-    "pytest==3.2.1",
-    "requests==2.18.4"
+    "pytest",
+    "requests"
 ]
 
 setup(
