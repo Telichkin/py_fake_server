@@ -171,6 +171,15 @@ def test_concrete_expectations_raise_error(server: FakeServer):
                                 "But for the 1 time: cookies was {'token': 'some_token'}.")
 
 
+def test_with_cookies_in_any_order(server: FakeServer):
+    requests.get(server.base_uri + "/photos", cookies={"cookie1": "value1", "cookie2": "value2"})
+
+    expect_that(server). \
+        was_requested("get", "/photos"). \
+        for_the_first_time(). \
+        with_cookies({"cookie2": "value2", "cookie1": "value1"})
+
+
 def test_concrete_expectations_not_raise_error_when_ok(server: FakeServer):
     requests.get(server.base_uri + "/photos", cookies={"token": "token", "other": "other"})
 
