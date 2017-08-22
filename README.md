@@ -1,4 +1,6 @@
 # py_fake_server
+[![Build Status](https://travis-ci.org/Telichkin/py_fake_server.svg?branch=master)](https://travis-ci.org/Telichkin/py_fake_server)
+
 py_fake_server helps you create fake servers with pleasure. It provides
 declarative API both for server creation and for checking expectation.
 Let's look at some examples below!
