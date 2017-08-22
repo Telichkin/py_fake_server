@@ -30,15 +30,15 @@ requires = [
 ]
 
 tests_require = [
-    "pytest",
-    "requests",
+    "pytest==3.2.1",
+    "requests==2.18.4"
 ]
-
 
 setup(
     name="py_fake_server",
     version=find_version("py_fake_server", "__init__.py"),
     description="Make fake servers with pleasure!",
+    url="https://github.com/Telichkin/py_fake_server",
     author="Roman Telichkin",
     author_email="roman@telichk.in",
     license="MIT",
@@ -46,4 +46,9 @@ setup(
     install_requires=requires,
     tests_require=tests_require,
     setup_requires=["pytest-runner"],
+    classifiers=[
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ]
 )
