@@ -1,11 +1,10 @@
 # py_fake_server
 [![Build Status](https://travis-ci.org/Telichkin/py_fake_server.svg?branch=master)](https://travis-ci.org/Telichkin/py_fake_server)
+[![Python versions](https://img.shields.io/pypi/pyversions/py_fake_server.svg)](https://pypi.python.org/pypi/py_fake_server)
 
 py_fake_server helps you create fake servers with pleasure. It provides
 declarative API both for server creation and for checking expectation.
 Let's look at some examples below!
-
-**Current version works only on Python 3.6**
 
 - First of all, you should create server and start it:
 ```python
