@@ -31,7 +31,8 @@ requires = [
 
 tests_require = [
     "pytest",
-    "requests"
+    "requests",
+    "pytest-cov",
 ]
 
 setup(
@@ -48,7 +49,6 @@ setup(
     setup_requires=["pytest-runner"],
     classifiers=[
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]
 )

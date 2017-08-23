@@ -7,6 +7,7 @@ falcon-multipart==0.2.0
 idna==2.6
 py==1.4.34
 pytest==3.2.1
+pytest-cov==2.5.1
 python-mimeparse==1.6.0
 requests==2.18.4
 six==1.10.0
