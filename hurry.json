@@ -1,0 +1,6 @@
+{
+  "test": "python setup.py test",
+  "build": "python setup.py sdist bdist_wheel",
+  "upload": "hurry test && hurry build && twine upload dist/* && hurry cleanup",
+  "cleanup": "rm -rf build/ dist/ .eggs/ *.egg-info .coverage"
+}

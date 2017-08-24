@@ -5,12 +5,14 @@ from typing import Optional, List, Callable, Dict
 
 class RequestedParams:
     def __init__(self, cookies: Optional[Dict[str, str]], body: Optional[bytes], content_type: Optional[str],
-                 files: Optional[Dict[str, bytes]], headers: Optional[Dict[str, str]]):
+                 files: Optional[Dict[str, bytes]], headers: Optional[Dict[str, str]],
+                 query_params: Optional[Dict[str, str]]):
         self.cookies = cookies
         self.body = body
         self.content_type = content_type
         self.files = files
         self.headers = headers
+        self.query_params = query_params
 
 
 class HeaderDoesNotExist:
@@ -24,12 +26,24 @@ class Statistic:
         self.url: str = url
         self.requests: List[RequestedParams] = []
         self._current_request_index: Optional[int] = None
-        self._number_of_requests_not_specify = True
+        self._number_of_requests_not_specify: bool = True
         self._error_messages: List[str] = [f"Expect that server was requested with [{method.upper()}] {url}."]
 
     @property
-    def requested_times(self):
+    def requested_times(self) -> int:
         return len(self.requests)
+
+    def exactly_once(self) -> "Statistic":
+        return self.exactly_1_times()
+
+    def exactly_twice(self) -> "Statistic":
+        return self.exactly_2_times()
+
+    def for_the_first_time(self) -> "Statistic":
+        return self.for_the_1_time()
+
+    def for_the_second_time(self) -> "Statistic":
+        return self.for_the_2_time()
 
     def __getattr__(self, item):
         exactly_times_pattern = r"^exactly_(?P<number>\d+)_times$"
@@ -46,12 +60,6 @@ class Statistic:
 
         raise AttributeError(f"'Statistic' object has no attribute '{item}'")
 
-    def exactly_once(self) -> "Statistic":
-        return self.exactly_1_times()
-
-    def exactly_twice(self) -> "Statistic":
-        return self.exactly_2_times()
-
     def _exactly_times(self, expected_requested_times: int) -> Callable[[], "Statistic"]:
         self._number_of_requests_not_specify = False
         if expected_requested_times != self.requested_times:
@@ -59,12 +67,6 @@ class Statistic:
                                         f"But server was requested {self.requested_times} times.")
             self._raise_assertion()
         return lambda: self
-
-    def for_the_first_time(self) -> "Statistic":
-        return self.for_the_1_time()
-
-    def for_the_second_time(self) -> "Statistic":
-        return self.for_the_2_time()
 
     def _for_the_time(self, times: int) -> Callable[[], "Statistic"]:
         if self.requested_times < times:
@@ -152,12 +154,22 @@ class Statistic:
 
         return headers_diff
 
+    def with_query_params(self, query_params: Dict[str, str]) -> "Statistic":
+        actual_query_params = self.get_current_request().query_params
+
+        if query_params != actual_query_params:
+            requested_time = self._current_request_index + 1
+            self._error_messages.append(f"\nFor the {requested_time} time: with query params {query_params}.\n"
+                                        f"But for the {requested_time} time: query params was {actual_query_params}.")
+
+        return self
+
     def get_current_request(self) -> RequestedParams:
         if self._current_request_index is None:
             raise AttributeError("You should specify concrete request for check with 'for_the_<any_number>_time'")
         return self.requests[self._current_request_index]
 
-    def check(self):
+    def check(self) -> bool:
         if not self.requested_times and self._number_of_requests_not_specify:
             self._error_messages.append("\nBut server was requested 0 times.")
 
@@ -165,9 +177,10 @@ class Statistic:
             self._raise_assertion()
         else:
             self._clean_state()
+            return True
 
     @property
-    def errors_exist(self):
+    def errors_exist(self) -> bool:
         return len(self._error_messages) > 1
 
     def _raise_assertion(self):

@@ -2,11 +2,11 @@
 [![Build Status](https://travis-ci.org/Telichkin/py_fake_server.svg?branch=master)](https://travis-ci.org/Telichkin/py_fake_server)
 [![Python versions](https://img.shields.io/pypi/pyversions/py_fake_server.svg)](https://pypi.python.org/pypi/py_fake_server)
 
-py_fake_server helps you create fake servers with pleasure. It provides
+**py_fake_server** helps you create fake servers with pleasure. It provides
 declarative API both for server creation and for checking expectation.
 Let's look at some examples below!
 
-- First of all, you should create server and start it:
+First of all, you should create server and start it:
 ```python
 # test.py
 
@@ -18,7 +18,7 @@ server.start()
 Server started in the background and you can continue work in the
 same process (thread).
 
-- After that you can add some endpoints:
+After that you can add some endpoints:
 ```python
 # test.py
 # previous code
@@ -33,7 +33,8 @@ server. \
     once()
 ```
 
-- Now you can access your server:
+
+Now you can access your server:
 ```python
 # test.py
 # previous code
@@ -56,7 +57,7 @@ assert response_3.text == "Server has not responses for [POST] http://localhost:
 
 ```
 
-- And you can check some expectation on created endpoint:
+And check expectations on created endpoint:
 ```python
 # test.py
 # previous code

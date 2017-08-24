@@ -511,3 +511,38 @@ def test_compare_with_not_incoming_json_raise_exception(server: FakeServer):
     assert str(error.value) == ('Expect that server was requested with [POST] http://localhost:8081/songs.\n'
                                 'For the 1 time: with json {"album": "Blood of the Saints", "artist": "Powerwolf"}.\n'
                                 'But for the 1 time: json was corrupted \'Blessed & Possessed\'.')
+
+
+def test_compare_query_params(server: FakeServer):
+    requests.get(server.base_uri + "/images", params={"foo": "bar", "baz": "qux"})
+
+    expect_that(server). \
+        was_requested("get", "/images"). \
+        for_the_first_time(). \
+        with_query_params({"baz": "qux", "foo": "bar"}). \
+        check()
+
+
+def test_compare_query_params_exception(server: FakeServer):
+    requests.get(server.base_uri + "/games", params={"foo": "bar", "baz": "qux"})
+
+    with pytest.raises(AssertionError) as error:
+        expect_that(server). \
+            was_requested("get", "/games"). \
+            for_the_first_time(). \
+            with_query_params({"foo": "baz", "bar": "qux"}). \
+            check()
+
+    assert str(error.value) == ("Expect that server was requested with [GET] http://localhost:8081/games.\n"
+                                "For the 1 time: with query params {'foo': 'baz', 'bar': 'qux'}.\n"
+                                "But for the 1 time: query params was {'foo': 'bar', 'baz': 'qux'}.")
+
+
+def test_check_method_works_with_assert(server: FakeServer):
+    requests.get(server.base_uri + "/play", cookies={"token": "token"})
+
+    assert server. \
+        was_requested("get", "/play"). \
+        for_the_first_time(). \
+        with_cookies({"token": "token"}). \
+        check()

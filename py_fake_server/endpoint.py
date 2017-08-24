@@ -11,7 +11,7 @@ class Endpoint:
         self._content_types: List[Optional[str]] = []
         self._headers_list: List[Dict] = []
         self._cookies_list: List[Dict] = []
-        self._called_times = 0
+        self._called_times: int = 0
         self._last_endpoint_call_limited: bool = False
 
     @property
@@ -27,11 +27,11 @@ class Endpoint:
         return self._content_types[self._current_data_index]
 
     @property
-    def headers(self) -> Dict:
+    def headers(self) -> Dict[str, str]:
         return self._headers_list[self._current_data_index]
 
     @property
-    def cookies(self) -> Dict:
+    def cookies(self) -> Dict[str, str]:
         return self._cookies_list[self._current_data_index]
 
     @property
@@ -69,14 +69,10 @@ class Endpoint:
         self._called_times += 1
 
     def once(self) -> "Endpoint":
-        self._last_endpoint_call_limited = True
-        self._append_data(status=500, body=f"Server has not responses for [{self.method.upper()}] {self.url}",
-                          content_type="text/plain", headers={}, cookies={})
-        return self
+        return self._1_times()
 
     def twice(self) -> "Endpoint":
-        self._times(2)()
-        return self
+        return self._2_times()
 
     def __getattr__(self, item):
         times_pattern = r"^_(?P<number>\d+)_times$"
@@ -92,7 +88,10 @@ class Endpoint:
                 self._append_data(status=self._statuses[-1], body=self._bodies[-1],
                                   content_type=self._content_types[-1], headers=self._headers_list[-1],
                                   cookies=self._cookies_list[-1])
-            self.once()
+
+            self._last_endpoint_call_limited = True
+            self._append_data(status=500, body=f"Server has not responses for [{self.method.upper()}] {self.url}",
+                              content_type="text/plain", headers={}, cookies={})
             return self
 
         return times

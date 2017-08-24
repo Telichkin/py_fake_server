@@ -19,13 +19,13 @@ class FakeServer(falcon.API):
         self.add_sink(self._handle_all)
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
-        route = (request.method.lower(), request.uri)
+        route = (request.method.lower(), self.base_uri + request.path)
         endpoint = self._endpoints.get(route, None)
         if endpoint:
             self._set_response_attributes_from_endpoint(response, endpoint)
             endpoint.called()
         else:
-            error_endpoint = Endpoint(request.method, request.uri).once()
+            error_endpoint = Endpoint(request.method, self.base_uri + request.path).once()
             error_endpoint.called()
             self._set_response_attributes_from_endpoint(response, error_endpoint)
 
@@ -49,7 +49,8 @@ class FakeServer(falcon.API):
                                                   body=request.bounded_stream.read(),
                                                   content_type=request.content_type,
                                                   files=self._get_files(request),
-                                                  headers=request.headers))
+                                                  headers=request.headers,
+                                                  query_params=request.params))
 
     @staticmethod
     def _get_files(request: falcon.Request) -> Optional[Dict[str, bytes]]:
