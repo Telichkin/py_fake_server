@@ -1,85 +1,110 @@
 # py_fake_server
 [![Build Status](https://travis-ci.org/Telichkin/py_fake_server.svg?branch=master)](https://travis-ci.org/Telichkin/py_fake_server)
+[![codecov](https://codecov.io/gh/Telichkin/py_fake_server/branch/master/graph/badge.svg)](https://codecov.io/gh/Telichkin/py_fake_server)
 [![Python versions](https://img.shields.io/pypi/pyversions/py_fake_server.svg)](https://pypi.python.org/pypi/py_fake_server)
 
 **py_fake_server** helps you create fake servers with pleasure. It provides
 declarative API both for server creation and for checking expectation.
 Let's look at some examples below!
 
-First of all, you should create server and start it:
-```python
-# test.py
-
-from py_fake_server import FakeServer
-
-server = FakeServer(host="localhost", port=8081)
-server.start()
-```
-Server started in the background and you can continue work in the
-same process (thread).
-
-After that you can add some endpoints:
-```python
-# test.py
-# previous code
-
-server. \
-    on_("post", "/users"). \
-    response(status=200, body="Hello, World!", content_type="text/plain"). \
-    once(). \
-    then(). \
-    response(status=200, body='{"message": "Goodbye, World!"}',
-             content_type="application/json"). \
-    once()
-```
-
-
-Now you can access your server:
-```python
-# test.py
-# previous code
-
-import requests
-
-response_1 = requests.post(server.base_uri + "/users", json={"test": "value"})
-assert response_1.status_code == 200
-assert response_1.text == "Hello, World!"
-assert response_1.headers["content-type"] == "text/plain"
-
-response_2 = requests.post(server.base_uri + "/users", json={"test": "value2"})
-assert response_2.status_code == 200
-assert response_2.json() == {"message": "Goodbye, World!"}
-assert response_2.headers["content-type"] == "application/json"
-
-response_3 = requests.post(server.base_uri + "/users", json={"test": "value3"})
-assert response_3.status_code == 500
-assert response_3.text == "Server has not responses for [POST] http://localhost:8081/users"
-
-```
-
-And check expectations on created endpoint:
-```python
-# test.py
-# previous code
-
-from py_fake_server import expect_that
-
-expect_that(server). \
-    was_requested("post", "/users"). \
-    exactly_3_times(). \
-    for_the_first_time() .\
-    with_json({"test": "value"}). \
-    for_the_second_time(). \
-    with_json({"test": "value2"}). \
-    for_the_3_time(). \
-    with_json({"test": "value3"}). \
-    check()
-```
-
-For more examples see documentation below [in progress]
 
 ## Install
-```pip3 install py_fake_server```
+`pip3 install py_fake_server`
+
+
+## Getting Started
+
+Here is a simple example showing how to create a dummy test with py_fake_server.
+
+```python
+# dummy_test.py
+
+import requests
+from py_fake_server import FakeServer
+
+
+def test_simple_example():
+    server = FakeServer(host="localhost", port=8081)
+    server.start()
+    server. \
+        on_("get", "/hello"). \
+        response(status=200, body="Hello, World!", content_type="text/plain")
+    
+    response = requests.get(server.base_uri + "/hello")
+    
+    assert server. \
+        was_requested("get", "/hello"). \
+        exactly_once().check()
+        
+```
+
+
+# A more complex example
+
+Here is a more interesting example that demonstrates checking body, cookies, content-type, and working with more than one response from server. Imagine, that we're testing api-gateway that should check a user authentication in an auth microservice before update the user information in a portfolio microservice. And we don't want to up and run both auth and portfolio microservices, but we can use py_fake_servers instead.
+
+```python
+# more_complex_test.py
+import pytest
+import requests
+from py_fake_server import FakeServer
+
+API_GATEWAY_BASE_URI = "http://localhost:8080"
+
+
+@pytest.fixture(scope="session")
+def auth_server():
+    server = FakeServer(host="localhost", port=8081)
+    server.start()
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="session")
+def portfolio_server():
+    server = FakeServer(host="localhost", port=8082)
+    server.start()
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def servers_cleanup(auth_server, portfolio_server):
+    auth_server.clear()
+    portfolio_server.clear()
+    yield
+    auth_server.clear()
+    portfolio_server.clear()
+
+
+def test_more_complex_example(auth_server: FakeServer, portfolio_server: FakeServer):
+    auth_server. \
+        on_("post", "/auth"). \
+        response(status=204)
+
+    portfolio_server. \
+        on_("patch", "/portfolios/34"). \
+        response(status=204)
+
+    requests.patch(API_GATEWAY_BASE_URI + "/users/34/portfolio",
+                   json={"description": "Brand new Description"},
+                   cookies={"token": "auth-token-with-encrypted-user-id-34"})
+
+    assert auth_server. \
+        was_requested("post", "/auth"). \
+        exactly_once(). \
+        for_the_first_time(). \
+        with_cookies({"token": "auth-token-with-encrypted-user-id-34"}).check()
+
+    assert portfolio_server. \
+        was_requested("patch", "/portfolios/34"). \
+        exactly_once(). \
+        for_the_first_time(). \
+        with_json({"description": "Brand new Description"}). \
+        with_content_type("application/json").check()
+        
+```
+
 
 ## License
 MIT License
