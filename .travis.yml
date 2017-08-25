@@ -1,6 +1,9 @@
 language: python
 python:
   - "3.6"
-install: 
+install:
+  - "pip install codecov"
   - "pip install ."
 script: "python setup.py test"
+after_success:
+  - "codecov"
