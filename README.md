@@ -39,7 +39,7 @@ def test_simple_example():
 ```
 
 
-# A more complex example
+## A more complex example
 
 Here is a more interesting example that demonstrates checking body, cookies, content-type, and working with more than one response from server. Imagine, that we're testing api-gateway that should check a user authentication in an auth microservice before update the user information in a portfolio microservice. And we don't want to up and run both auth and portfolio microservices, but we can use py_fake_servers instead.
 
