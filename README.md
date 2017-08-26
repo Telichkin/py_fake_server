@@ -24,14 +24,12 @@ from py_fake_server import FakeServer
 def test_simple_example():
     server = FakeServer(host="localhost", port=8081)
     server.start()
-    server. \
-        on_("get", "/hello"). \
+    server.on_("get", "/hello"). \
         response(status=200, body="Hello, World!", content_type="text/plain")
     
     response = requests.get(server.base_uri + "/hello")
     
-    assert server. \
-        was_requested("get", "/hello"). \
+    assert server.was_requested("get", "/hello"). \
         exactly_once().check()
         
 ```
