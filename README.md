@@ -65,6 +65,7 @@ Here is how it'll look in the code, using [pytest](https://github.com/pytest-dev
 
 ```python
 # api_gateway_test.py
+
 import json
 
 import pytest
