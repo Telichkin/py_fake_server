@@ -5,6 +5,16 @@
 
 **py_fake_server** is a small Python library that gives you the ability to create high-level tests (functional tests) for your services/microservices without having to connect to real external http-services. It provides declarative API for both creating the server and for checking the expectation.
 
+## Table of contents:
+* [Install](#install)
+* [Getting Started](#getting-started)
+* [A more complex example](#a-more-complex-example)
+* [Documentation by example](#documentation-by-example)
+    * [Start server](#start-server)
+    * [Stop server](#stop-server)
+    * [Create endpoint](#create-endpoint)
+    * [Clear created endpoints](#clear-created-endpoints)
+    * [Check expectations](#check-expectations)
 
 ## Install
 `pip3 install py_fake_server`
@@ -126,14 +136,6 @@ def test_patch_portfolio_description(auth_server: FakeServer, portfolio_server: 
 
 
 ## Documentation by example
-
-Table of contents:
-* [Start server](#start-server)
-* [Stop server](#stop-server)
-* [Create endpoint](#create-endpoint)
-* [Clear created endpoints](#clear-created-endpoints)
-* [Check expectations](#check-expectations)
-
 
 ### Start server
 ```python
