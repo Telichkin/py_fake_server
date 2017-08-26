@@ -3,9 +3,7 @@
 [![codecov](https://codecov.io/gh/Telichkin/py_fake_server/branch/master/graph/badge.svg)](https://codecov.io/gh/Telichkin/py_fake_server)
 [![Python versions](https://img.shields.io/pypi/pyversions/py_fake_server.svg)](https://pypi.python.org/pypi/py_fake_server)
 
-**py_fake_server** helps you create fake servers with pleasure. It provides
-declarative API both for server creation and for checking expectation.
-Let's look at some examples below!
+**py_fake_server** is a small Python library that gives you the ability to create high-level tests (functional tests) for your services/microservices without having to connect to real external http-services. It provides declarative API for both creating the server and for checking the expectation.
 
 
 ## Install
@@ -14,7 +12,7 @@ Let's look at some examples below!
 
 ## Getting Started
 
-Here is a simple example showing how to create a dummy test with py_fake_server.
+Here is a simple example showing how to create a dummy test with **py_fake_server**.
 
 ```python
 # dummy_test.py
@@ -41,10 +39,36 @@ def test_simple_example():
 
 ## A more complex example
 
-Here is a more interesting example that demonstrates checking body, cookies, content-type, and working with more than one response from server. Imagine, that we're testing api-gateway that should check a user authentication in an auth microservice before update the user information in a portfolio microservice. And we don't want to up and run both auth and portfolio microservices, but we can use py_fake_servers instead.
+The one of the best example to show necessary and simplicity of this library is testing the API-Gateway service in isolation. Imagine, that our API-Gateway should check a user authentication in an auth microservice before update the user information in a portfolio microservice. 
+```
+                       ┌───────────────┐ POST /auth             ┌──────────────┐
+                       |               | <--------------------> | Auth-service |
+PATCH /portfolios/34   |               |              HTTP 200  └──────────────┘
+---------------------> |  API-Gateway  |
+             HTTP 204  |               | PATCH /portfolios/34   ┌───────────────────┐           
+                       |               | <--------------------> | Portfolio-service |
+                       └───────────────┘              HTTP 204  └───────────────────┘
+```
+
+
+We don't want to up and run both auth and portfolio microservices, but we can use `FakeServer` instances instead.
+
+```
+                       ┌───────────────┐ POST /auth             ┌─────────────────────┐
+                       |               | <--------------------> | FakeServer instance |
+PATCH /portfolios/34   |               |              HTTP 200  └─────────────────────┘
+---------------------> |  API-Gateway  |
+             HTTP 204  |               | PATCH /portfolios/34   ┌─────────────────────┐           
+                       |               | <--------------------> | FakeServer instance |
+                       └───────────────┘              HTTP 204  └─────────────────────┘
+```
+
+Here is how it'll look in the code, using [pytest](https://github.com/pytest-dev/pytest) as a testing framework.
 
 ```python
-# more_complex_test.py
+# api_gateway_test.py
+import json
+
 import pytest
 import requests
 from py_fake_server import FakeServer
@@ -77,32 +101,28 @@ def servers_cleanup(auth_server, portfolio_server):
     portfolio_server.clear()
 
 
-def test_more_complex_example(auth_server: FakeServer, portfolio_server: FakeServer):
-    auth_server. \
-        on_("post", "/auth"). \
-        response(status=204)
+def test_patch_portfolio_description(auth_server: FakeServer, portfolio_server: FakeServer):
+    auth_server.on_("post", "/auth"). \
+        response(status=200, body=json.dumps({"user_id": "34"}), content_type="application/json")
 
-    portfolio_server. \
-        on_("patch", "/portfolios/34"). \
+    portfolio_server.on_("patch", "/portfolios/34"). \
         response(status=204)
 
     requests.patch(API_GATEWAY_BASE_URI + "/users/34/portfolio",
                    json={"description": "Brand new Description"},
                    cookies={"token": "auth-token-with-encrypted-user-id-34"})
 
-    assert auth_server. \
-        was_requested("post", "/auth"). \
+    assert auth_server.was_requested("post", "/auth"). \
         exactly_once(). \
         for_the_first_time(). \
         with_cookies({"token": "auth-token-with-encrypted-user-id-34"}).check()
 
-    assert portfolio_server. \
-        was_requested("patch", "/portfolios/34"). \
+    assert portfolio_server.was_requested("patch", "/portfolios/34"). \
         exactly_once(). \
         for_the_first_time(). \
+        with_query_params({"requested_user_id": "34"}). \
         with_json({"description": "Brand new Description"}). \
         with_content_type("application/json").check()
-        
 ```
 
 
