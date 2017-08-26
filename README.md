@@ -132,6 +132,7 @@ Table of contents:
 * [Stop server](#stop-server)
 * [Create endpoint](#create-endpoint)
 * [Clear created endpoints](#clear-created-endpoints)
+* [Check expectations](#check-expectations)
 
 
 ### Start server
@@ -142,24 +143,22 @@ server.start()
 
 ### Stop server
 ```python
-server = FakeServer(host="localhost", port=8081
+server = FakeServer(host="localhost", port=8081)
 server.start()
 server.stop()
 ```
 
 ### Create endpoint
-
 Simple endpoint:
 
 ```python
 
-server.on_("get", "/some/path). \
+server.on_("get", "/some/path"). \
     response(status=200, body="Hello, World!", content_type="text/plain",
              headers={"Header Name": "Header Value"}, cookies={"Cookie Name": "Cookie Value"})
 ```
 
 Specify number of responses:
-
 ```python
 
 server.on_("post", "/some/path/1"). \
@@ -204,6 +203,82 @@ server.on_("post", "/some/path/1"). \
 ```python
 server.clear()
 ```
+
+### Check expectations
+Two interchangeable ways:
+```python
+from py_fake_server import expect_that
+
+expect_that(server).was_requested("get", "/some/path").check()
+assert server.was_requested("get", "/some/path").check()
+```
+
+Expected number of requests:
+```python
+assert server.was_requested("post", "/some/path/1"). \
+    exactly_once().check()
+
+assert server.was_requested("post", "/some/path/2"). \
+    exactly_twice().check()
+    
+assert server.was_requested("post", "/some/path/3"). \
+    exactly_3_times().check()
+
+assert server.was_requested("post", "/some/path/100"). \
+    exactly_100_times().check()
+```
+
+Endpoint is never called:
+```python
+assert server.was_not_requested("post", "/never/called").check()
+```
+
+Specify the number of the check:
+```python
+assert server.was_requested("patch", "/some/path/1"). \
+    for_the_first_time(). \
+    with_body("The first time body").check()
+
+assert server.was_requested("patch", "/some/path/2"). \
+    for_the_second_time(). \
+    with_body("The second time body").check()
+
+assert server.was_requested("patch", "/some/path/3"). \
+    for_the_3_time(). \
+    with_body("The third time body").check()
+
+assert server.was_requested("patch", "/some/path/100"). \
+    for_the_100_time(). \
+    with_body("The 100th time body").check()
+
+# Mix all together!
+assert server.was_requested("patch", "/some/path"). \
+    exactly_101_times(). \
+    for_the_first_time(). \
+    with_body("The first time body"). \
+    for_the_second_time(). \
+    with_body("The second time body"). \
+    for_the_3_time(). \
+    with_body("The third time body"). \
+    for_the_100_time(). \
+    with_body("The 100th time body").check()
+```
+
+Different types of the check:
+```python
+assert server.was_requested("post", "some/path"). \
+    exactly_5_times().\ 
+    for_the_second_time(). \
+    with_body("Expected string body"). \
+    with_json({"Expected": "dictionary"}). \
+    with_files({"Expected": b"file"}). \
+    with_cookies({"Expected": "Cookie"}). \
+    with_headers({"Containts": "This header"}). \
+    with_content_type("String/Content-Type"). \
+    with_query_params({"Expected": "Query parameter"}). \
+    check()
+```
+
 
 ## License
 MIT License
