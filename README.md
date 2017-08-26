@@ -125,6 +125,86 @@ def test_patch_portfolio_description(auth_server: FakeServer, portfolio_server: 
 ```
 
 
+## Documentation by example
+
+Table of contents:
+* [Start server](#start-server)
+* [Stop server](#stop-server)
+* [Create endpoint](#create-endpoint)
+* [Clear created endpoints](#clear-created-endpoints)
+
+
+### Start server
+```python
+server = FakeServer(host="localhost", port=8081)
+server.start()
+```
+
+### Stop server
+```python
+server = FakeServer(host="localhost", port=8081
+server.start()
+server.stop()
+```
+
+### Create endpoint
+
+Simple endpoint:
+
+```python
+
+server.on_("get", "/some/path). \
+    response(status=200, body="Hello, World!", content_type="text/plain",
+             headers={"Header Name": "Header Value"}, cookies={"Cookie Name": "Cookie Value"})
+```
+
+Specify number of responses:
+
+```python
+
+server.on_("post", "/some/path/1"). \
+    response(status=204).once()
+
+server.on_("post", "/some/path/2"). \
+    response(status=204).twice()
+
+server.on_("post", "/some/path/3"). \
+    response(status=204)._3_times()
+
+server.on_("post", "/some/path/100"). \
+    response(status=204)._100_times()
+```
+
+When requests endpoint more times than was specified:
+```python
+import requests
+
+server.on_("post", "/some/path/1"). \
+    response(status=204).once()
+ 
+response_1 = requests.post(server.base_uri + "/some/path/1")
+response_2 = requests.post(server.base_uri + "/some/path/1")
+
+response_1.status_code  # -> 204
+response_2.status_code  # -> 500
+response_2.text         # -> Server has not responses for [POST] http://localhost:8081/some/path/1
+```
+
+Specify chain of responses:
+```python
+server.on_("post", "/some/path/1"). \
+    response(status=204).once(). \
+    then(). \
+    response(status=401).once(). \
+    then(). \
+    response(status=204)
+```
+
+### Clear created endpoints 
+```python
+server.clear()
+```
+
 ## License
 MIT License
 
