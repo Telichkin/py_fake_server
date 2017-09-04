@@ -243,3 +243,13 @@ def test_add_response_with_204_and_body_raise_exception(server: FakeServer):
             response(status=204, body="some body")
 
     assert str(error.value) == "status == 204 and body != None in one response"
+
+
+def test_route_with_ending_slash(server: FakeServer):
+    server. \
+        on_("get", "/users/"). \
+        response(status=200, body="Hello!")
+
+    response = requests.get(server.base_uri + "/users/")
+    assert response.status_code == 200
+    assert response.text == "Hello!"

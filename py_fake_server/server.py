@@ -19,7 +19,7 @@ class FakeServer(falcon.API):
         self.add_sink(self._handle_all)
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
-        route = (request.method.lower(), self.base_uri + request.path)
+        route = (request.method.lower(), self.base_uri + request.path.rstrip("/"))
         endpoint = self._endpoints.get(route, None)
         if endpoint:
             self._set_response_attributes_from_endpoint(response, endpoint)
@@ -77,7 +77,7 @@ class FakeServer(falcon.API):
         self._statistics = {}
 
     def on_(self, method: str, url: str) -> Endpoint:
-        new_endpoint = Endpoint(method.lower(), self.base_uri + url)
+        new_endpoint = Endpoint(method.lower(), self.base_uri + url.rstrip("/"))
         self._endpoints[(new_endpoint.method, new_endpoint.url)] = new_endpoint
         return new_endpoint
 
