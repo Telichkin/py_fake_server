@@ -11,12 +11,19 @@ from .statistic import Statistic, RequestedParams
 class FakeServer(falcon.API):
     def __init__(self, host: str, port: int):
         super().__init__(middleware=[MultipartMiddleware()])
+        self.req_options = self._get_request_options()
         self._host: str = host
         self._port: int = port
         self._server: Optional[StopableWSGIServer] = None
         self._endpoints: Dict[Tuple[str, str], Endpoint] = {}
         self._statistics: Dict[Tuple[str, str], Statistic] = {}
         self.add_sink(self._handle_all)
+
+    @staticmethod
+    def _get_request_options():
+        options = falcon.RequestOptions()
+        options.auto_parse_qs_csv = False
+        return options
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
         route = (request.method.lower(), self.base_uri + request.path.rstrip("/"))

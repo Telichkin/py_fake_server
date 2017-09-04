@@ -555,3 +555,13 @@ def test_check_with_ending_slash(server: FakeServer):
         was_requested("get", "/games/"). \
         exactly_once(). \
         check()
+
+
+def test_check_query_params_with_commas(server: FakeServer):
+    requests.get(server.base_uri + "/games/", params={"query": "id=in=(1,2)|limit(1,0)"})
+
+    assert server. \
+        was_requested("get", "/games/"). \
+        for_the_first_time(). \
+        with_query_params({"query": "id=in=(1,2)|limit(1,0)"}). \
+        check()
