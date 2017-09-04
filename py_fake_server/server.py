@@ -82,7 +82,7 @@ class FakeServer(falcon.API):
         return new_endpoint
 
     def was_requested(self, method: str, url: str) -> Statistic:
-        route = (method.lower(), self.base_uri + url)
+        route = (method.lower(), self.base_uri + url.rstrip("/"))
         self._statistics.setdefault(route, Statistic(route[0], route[1]))
         return self._statistics.get(route)
 

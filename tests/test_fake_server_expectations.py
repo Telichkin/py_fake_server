@@ -546,3 +546,12 @@ def test_check_method_works_with_assert(server: FakeServer):
         for_the_first_time(). \
         with_cookies({"token": "token"}). \
         check()
+
+
+def test_check_with_ending_slash(server: FakeServer):
+    requests.get(server.base_uri + "/games/")
+
+    assert server. \
+        was_requested("get", "/games/"). \
+        exactly_once(). \
+        check()
