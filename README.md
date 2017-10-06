@@ -76,8 +76,6 @@ Here is how it'll look in the code, using [pytest](https://github.com/pytest-dev
 ```python
 # api_gateway_test.py
 
-import json
-
 import pytest
 import requests
 from py_fake_server import FakeServer
@@ -112,7 +110,7 @@ def servers_cleanup(auth_server, portfolio_server):
 
 def test_patch_portfolio_description(auth_server: FakeServer, portfolio_server: FakeServer):
     auth_server.on_("post", "/auth"). \
-        response(status=200, body=json.dumps({"user_id": "34"}), content_type="application/json")
+        response(status=200, json={"user_id": "34"})
 
     portfolio_server.on_("patch", "/portfolios/34"). \
         response(status=204)

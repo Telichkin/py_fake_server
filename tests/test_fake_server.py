@@ -253,3 +253,33 @@ def test_route_with_ending_slash(server: FakeServer):
     response = requests.get(server.base_uri + "/users/")
     assert response.status_code == 200
     assert response.text == "Hello!"
+
+
+def test_json_in_response(server: FakeServer):
+    (server.
+        on_("get", "/json_response").
+        response(status=200, json={"hello": "world"}))
+
+    response = requests.get(server.base_uri + "/json_response")
+    assert response.status_code == 200
+    assert response.json() == {"hello": "world"}
+    assert response.headers["Content-Type"] == "application/json"
+
+
+def test_json_and_body_raise_exception(server: FakeServer):
+    with pytest.raises(AttributeError) as error:
+        (server.
+            on_("post", "/error").
+            response(status=200, body="Oops!", json={"oops": "I did it again"}))
+
+    assert str(error.value) == "'body' and 'json' in one response"
+
+
+def test_explicit_content_type_remove_application_json(server: FakeServer):
+    (server.
+        on_("patch", "/games").
+        response(status=200, json={"change": "content-type"}, content_type="text/plain"))
+
+    response = requests.patch(server.base_uri + "/games")
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "text/plain"

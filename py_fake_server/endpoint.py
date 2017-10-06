@@ -1,4 +1,5 @@
 import re
+import json as json_lib
 from typing import Optional, List, Callable, Dict
 
 
@@ -41,7 +42,8 @@ class Endpoint:
         return self._called_times
 
     def response(self, status: int, body: Optional[str] = None, content_type: Optional[str] = None,
-                 headers: Optional[Dict[str, str]] = None, cookies: Optional[Dict[str, str]] = None) -> "Endpoint":
+                 headers: Optional[Dict[str, str]] = None, cookies: Optional[Dict[str, str]] = None,
+                 json: Optional[Dict] = None) -> "Endpoint":
         if status == 204 and body is not None:
             raise AttributeError("status == 204 and body != None in one response")
 
@@ -50,6 +52,8 @@ class Endpoint:
             raise AttributeError("Explicit Content-Type and Content-Type in headers in one response")
         if cookies and "cookies" in headers_names:
             raise AttributeError("Explicit Cookies and Cookies in headers in one response")
+        if body is not None and json is not None:
+            raise AttributeError("'body' and 'json' in one response")
 
         if self._last_endpoint_call_limited:
             self._statuses.pop()
@@ -58,6 +62,10 @@ class Endpoint:
             self._headers_list.pop()
             self._cookies_list.pop()
             self._last_endpoint_call_limited = False
+
+        if json is not None:
+            content_type = content_type or "application/json"
+            body = json_lib.dumps(json)
 
         self._append_data(status=status, body=body, content_type=content_type, headers=headers, cookies=cookies)
         return self
