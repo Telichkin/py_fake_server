@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, Union
 
 import falcon
 from falcon_multipart.middleware import MultipartMiddleware
@@ -101,5 +101,8 @@ class FakeServer(falcon.API):
         return statistic
 
 
-def expect_that(server: FakeServer):
-    return server
+def expect_that(expectation: Union[FakeServer, Statistic]):
+    if isinstance(expectation, FakeServer):
+        return expectation
+    else:
+        return expectation.check()
