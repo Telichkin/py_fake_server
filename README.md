@@ -205,12 +205,16 @@ server.clear()
 ```
 
 ### Check expectations
-Two interchangeable ways:
+Three interchangeable ways:
 ```python
 from py_fake_server import expect_that
 
-expect_that(server).was_requested("get", "/some/path").check()
+# With an explicit call to the method "check()"
 assert server.was_requested("get", "/some/path").check()
+expect_that(server).was_requested("get", "/some/path").check()
+
+# Without a call to the method "check()"
+expect_that(server.was_requested("get", "/some/path"))
 ```
 
 Expected number of requests:
