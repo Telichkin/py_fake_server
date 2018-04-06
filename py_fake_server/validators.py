@@ -7,7 +7,12 @@ class HeaderDoesNotExist:
         return "<HEADER DOES NOT EXIST>"
 
 
-class WithCookies:
+class BaseValidator:
+    def validate(self, request, current_requested_time: int):
+        raise NotImplementedError
+
+
+class WithCookies(BaseValidator):
     def __init__(self, cookies: Dict[str, str]):
         self.cookies = cookies
 
@@ -17,7 +22,7 @@ class WithCookies:
             f"But for the {current_requested_time} time: cookies was {request.cookies}."
 
 
-class WithBody:
+class WithBody(BaseValidator):
     def __init__(self, body: str):
         self.body = body
 
@@ -28,7 +33,7 @@ class WithBody:
             f"But for the {current_requested_time} time: body was {actual_body.__repr__()}."
 
 
-class WithJson:
+class WithJson(BaseValidator):
     def __init__(self, json_dict: Dict):
         self.json = json_dict
 
@@ -49,7 +54,7 @@ class WithJson:
             f"But for the {current_requested_time} time: json was {actual_body}."
 
 
-class WithContentType:
+class WithContentType(BaseValidator):
     def __init__(self, content_type: str):
         self.content_type = content_type
 
@@ -59,7 +64,7 @@ class WithContentType:
             f"But for the {current_requested_time} time: content type was {request.content_type.__repr__()}."
 
 
-class WithFiles:
+class WithFiles(BaseValidator):
     def __init__(self, files: Dict[str, bytes]):
         self.files = files
 
@@ -69,7 +74,7 @@ class WithFiles:
             f"But for the {current_requested_time} time: files was {request.files}."
 
 
-class WithHeaders:
+class WithHeaders(BaseValidator):
     def __init__(self, headers: Dict[str, str]):
         self.headers = {name.upper(): value for name, value in headers.items()}
 
@@ -93,7 +98,7 @@ class WithHeaders:
         return headers_diff
 
 
-class WithQueryParams:
+class WithQueryParams(BaseValidator):
     def __init__(self, query_params: Dict[str, str]):
         self.query_params = query_params
 

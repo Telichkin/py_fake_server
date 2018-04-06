@@ -283,3 +283,12 @@ def test_explicit_content_type_remove_application_json(server: FakeServer):
     response = requests.patch(server.base_uri + "/games")
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "text/plain"
+
+
+def test_was_not_requested_with_slash_at_the_end(server: FakeServer):
+    server.on_("get", "/slash").response(200)
+
+    requests.get(server.base_uri + "/slash/")
+
+    with pytest.raises(AssertionError):
+        server.was_not_requested("get", "/slash/")

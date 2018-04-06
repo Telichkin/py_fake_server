@@ -3,7 +3,7 @@ from typing import Optional, List, Callable, Dict
 
 from py_fake_server.validators import (
     WithQueryParams, WithCookies, WithBody, WithJson,
-    WithContentType, WithFiles, WithHeaders
+    WithContentType, WithFiles, WithHeaders, BaseValidator
 )
 
 
@@ -131,7 +131,7 @@ class Statistic:
         self._number_of_requests_not_specify = True
         self._current_request_index = None
 
-    def validate(self, validator) -> "Statistic":
+    def validate(self, validator: BaseValidator) -> "Statistic":
         try:
             validator.validate(self.current_request, self.current_requested_time)
         except AssertionError as error:

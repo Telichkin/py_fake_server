@@ -2,11 +2,13 @@ import re
 import json as json_lib
 from typing import Optional, List, Callable, Dict
 
+from py_fake_server.route import Route
+
 
 class Endpoint:
-    def __init__(self, method: str, url: str):
-        self.method = method
-        self.url = url
+    def __init__(self, route: Route):
+        self.method = route.method
+        self.url = route.url
         self._statuses: List[Optional[int]] = []
         self._bodies: List[Optional[str]] = []
         self._content_types: List[Optional[str]] = []

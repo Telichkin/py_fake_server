@@ -1,9 +1,10 @@
-from typing import Optional, Dict, Tuple, Union
+from typing import Optional, Dict, Union
 
 import falcon
 from falcon_multipart.middleware import MultipartMiddleware
 from webtest.http import StopableWSGIServer
 
+from py_fake_server.route import Route
 from .endpoint import Endpoint
 from .statistic import Statistic, RequestedParams
 
@@ -15,8 +16,8 @@ class FakeServer(falcon.API):
         self._host: str = host
         self._port: int = port
         self._server: Optional[StopableWSGIServer] = None
-        self._endpoints: Dict[Tuple[str, str], Endpoint] = {}
-        self._statistics: Dict[Tuple[str, str], Statistic] = {}
+        self._endpoints: Dict[Route, Endpoint] = {}
+        self._statistics: Dict[Route, Statistic] = {}
         self.add_sink(self._handle_all)
 
     @staticmethod
@@ -26,13 +27,13 @@ class FakeServer(falcon.API):
         return options
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
-        route = (request.method.lower(), self.base_uri + request.path.rstrip("/"))
+        route = Route(request.method, self.base_uri, request.path)
         endpoint = self._endpoints.get(route, None)
         if endpoint:
             self._set_response_attributes_from_endpoint(response, endpoint)
             endpoint.called()
         else:
-            error_endpoint = Endpoint(request.method, self.base_uri + request.path).once()
+            error_endpoint = Endpoint(route).once()
             error_endpoint.called()
             self._set_response_attributes_from_endpoint(response, error_endpoint)
 
@@ -49,8 +50,8 @@ class FakeServer(falcon.API):
         for cookie_name, cookie_value in endpoint.cookies.items():
             response.set_cookie(cookie_name, cookie_value)
 
-    def _update_statistics(self, request: falcon.Request, route: Tuple[str, str]):
-        self._statistics.setdefault(route, Statistic(route[0], route[1]))
+    def _update_statistics(self, request: falcon.Request, route: Route):
+        self._statistics.setdefault(route, Statistic(route.method, route.url))
         statistic = self._statistics.get(route)
         statistic.requests.append(RequestedParams(cookies=request.cookies,
                                                   body=request.bounded_stream.read(),
@@ -84,18 +85,19 @@ class FakeServer(falcon.API):
         self._statistics = {}
 
     def on_(self, method: str, url: str) -> Endpoint:
-        new_endpoint = Endpoint(method.lower(), self.base_uri + url.rstrip("/"))
-        self._endpoints[(new_endpoint.method, new_endpoint.url)] = new_endpoint
+        route = Route(method, self.base_uri, url)
+        new_endpoint = Endpoint(route)
+        self._endpoints[route] = new_endpoint
         return new_endpoint
 
     def was_requested(self, method: str, url: str) -> Statistic:
-        route = (method.lower(), self.base_uri + url.rstrip("/"))
-        self._statistics.setdefault(route, Statistic(route[0], route[1]))
+        route = Route(method, self.base_uri, url)
+        self._statistics.setdefault(route, Statistic(route.method, route.url))
         return self._statistics.get(route)
 
     def was_not_requested(self, method: str, url: str) -> Statistic:
-        route = (method.lower(), self.base_uri + url)
-        self._statistics.setdefault(route, Statistic(route[0], route[1]))
+        route = Route(method, self.base_uri, url)
+        self._statistics.setdefault(route, Statistic(route.method, route.url))
         statistic: Statistic = self._statistics.get(route)
         statistic.exactly_0_times()
         return statistic
