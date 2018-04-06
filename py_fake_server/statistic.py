@@ -1,7 +1,9 @@
-import json
 import re
 from functools import wraps
 from typing import Optional, List, Callable, Dict
+
+from py_fake_server.checks import with_cookies, with_body, with_json, with_content_type, with_files, with_headers, \
+    with_query_params
 
 
 class RequestedParams:
@@ -14,11 +16,6 @@ class RequestedParams:
         self.files = files
         self.headers = headers
         self.query_params = query_params
-
-
-class HeaderDoesNotExist:
-    def __repr__(self):
-        return "<HEADER DOES NOT EXIST>"
 
 
 def check(method):
@@ -95,80 +92,31 @@ class Statistic:
 
     @check
     def with_cookies(self, cookies: Dict[str, str]) -> "Statistic":
-        actual_cookies = self.current_request.cookies
-        assert cookies == actual_cookies, \
-            f"\nFor the {self.current_requested_time} time: with cookies {cookies}.\n" \
-            f"But for the {self.current_requested_time} time: cookies was {actual_cookies}."
+        with_cookies(self.current_request, self.current_requested_time, cookies)
 
     @check
     def with_body(self, body: str) -> "Statistic":
-        actual_body = self.current_request.body.decode("utf-8", errors="skip")
-        assert body == actual_body, \
-            f"\nFor the {self.current_requested_time} time: with body {body.__repr__()}.\n" \
-            f"But for the {self.current_requested_time} time: body was {actual_body.__repr__()}."
+        with_body(self.current_request, self.current_requested_time, body)
 
     @check
     def with_json(self, json_dict: dict) -> "Statistic":
-        body = json.dumps(json_dict, sort_keys=True)
-
-        actual_body = self.current_request.body.decode("utf-8", errors="skip")
-        try:
-            actual_json_dict = json.loads(actual_body)
-        except json.JSONDecodeError:
-            assert False, \
-                f"\nFor the {self.current_requested_time} time: with json {body}.\n" \
-                f"But for the {self.current_requested_time} time: json was corrupted {actual_body.__repr__()}."
-
-        actual_body = json.dumps(actual_json_dict, sort_keys=True)
-        assert body == actual_body, \
-            f"\nFor the {self.current_requested_time} time: with json {body}.\n" \
-            f"But for the {self.current_requested_time} time: json was {actual_body}."
+        with_json(self.current_request, self.current_requested_time, json_dict)
 
     @check
     def with_content_type(self, content_type: str) -> "Statistic":
-        actual_content_type = self.current_request.content_type
-        assert content_type == actual_content_type, \
-            f"\nFor the {self.current_requested_time} time: with content type {content_type.__repr__()}.\n" \
-            f"But for the {self.current_requested_time} time: content type was {actual_content_type.__repr__()}."
+        with_content_type(self.current_request, self.current_requested_time, content_type)
 
     @check
     def with_files(self, files: Dict[str, bytes]) -> "Statistic":
-        actual_files = self.current_request.files
-        if files != actual_files:
-            self._error_messages.append(
-                f"\nFor the {self.current_requested_time} time: with files {files}.\n"
-                f"But for the {self.current_requested_time} time: files was {actual_files}."
-            )
+        with_files(self.current_request, self.current_requested_time, files)
 
     @check
     def with_headers(self, headers: Dict[str, str]) -> "Statistic":
-        actual_headers = self.current_request.headers
-        expected_headers = {name.upper(): value for name, value in headers.items()}
-
-        headers_diff = self._get_headers_diff(expected_headers, actual_headers)
-        assert not headers_diff, \
-            f"\nFor the {self.current_requested_time} time: with headers contain {expected_headers}.\n" \
-            f"But for the {self.current_requested_time} time: headers contained {headers_diff}."
-
-    @staticmethod
-    def _get_headers_diff(expected_headers: Dict[str, str], actual_headers: Dict[str, str]) -> Dict[str, str]:
-        headers_diff = {}
-
-        for header_name, header_value in expected_headers.items():
-            if header_name in actual_headers and header_value != actual_headers[header_name]:
-                headers_diff[header_name] = actual_headers[header_name]
-            elif header_name not in actual_headers:
-                headers_diff[header_name] = HeaderDoesNotExist()
-
-        return headers_diff
+        with_headers(self.current_request, self.current_requested_time, headers)
 
     @check
     def with_query_params(self, query_params: Dict[str, str]) -> "Statistic":
-        actual_query_params = self.current_request.query_params
-
-        assert query_params == actual_query_params, \
-            f"\nFor the {self.current_requested_time} time: with query params {query_params}.\n" \
-            f"But for the {self.current_requested_time} time: query params was {actual_query_params}."
+        with_query_params(self.current_request, self.current_requested_time, query_params)
 
     @property
     def current_request(self) -> RequestedParams:
