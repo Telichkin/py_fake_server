@@ -343,7 +343,7 @@ def test_chain_with_different_for_the_nth_time_ok(server: FakeServer):
 
 
 def test_raise_exception_on_with_when_concrete_time_not_specify(server: FakeServer):
-    with pytest.raises(AssertionError) as error:
+    with pytest.raises(RuntimeError) as error:
         expect_that(server.was_requested("get", "/games/1").with_body("Hello, World!"))
 
     assert str(error.value) == "You should specify concrete request for check with 'for_the_<any_number>_time'"
@@ -390,7 +390,7 @@ def test_raise_exception_if_for_the_nth_time_not_specify_in_second_expectation(s
                 for_the_first_time().
                 with_headers({"other": "value", "try-delete": "true"}))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         expect_that(server.was_requested("delete", "/hosts/1").
                     with_headers({"other": "value", "try-delete": "true"}))
 
