@@ -1,9 +1,10 @@
 import re
-from functools import wraps
 from typing import Optional, List, Callable, Dict
 
-from py_fake_server.checks import with_cookies, with_body, with_json, with_content_type, with_files, with_headers, \
-    with_query_params
+from py_fake_server.validators import (
+    WithQueryParams, WithCookies, WithBody, WithJson,
+    WithContentType, WithFiles, WithHeaders
+)
 
 
 class RequestedParams:
@@ -16,17 +17,6 @@ class RequestedParams:
         self.files = files
         self.headers = headers
         self.query_params = query_params
-
-
-def check(method):
-    @wraps(method)
-    def decorator(self, *args, **kwargs):
-        try:
-            method(self, *args, **kwargs)
-        except AssertionError as error:
-            self._error_messages.append(str(error))
-        return self
-    return decorator
 
 
 class Statistic:
@@ -90,33 +80,26 @@ class Statistic:
             self._current_request_index = times - 1
             return lambda: self
 
-    @check
     def with_cookies(self, cookies: Dict[str, str]) -> "Statistic":
-        with_cookies(self.current_request, self.current_requested_time, cookies)
+        return self.validate(WithCookies(cookies))
 
-    @check
     def with_body(self, body: str) -> "Statistic":
-        with_body(self.current_request, self.current_requested_time, body)
+        return self.validate(WithBody(body))
 
-    @check
     def with_json(self, json_dict: dict) -> "Statistic":
-        with_json(self.current_request, self.current_requested_time, json_dict)
+        return self.validate(WithJson(json_dict))
 
-    @check
     def with_content_type(self, content_type: str) -> "Statistic":
-        with_content_type(self.current_request, self.current_requested_time, content_type)
+        return self.validate(WithContentType(content_type))
 
-    @check
     def with_files(self, files: Dict[str, bytes]) -> "Statistic":
-        with_files(self.current_request, self.current_requested_time, files)
+        return self.validate(WithFiles(files))
 
-    @check
     def with_headers(self, headers: Dict[str, str]) -> "Statistic":
-        with_headers(self.current_request, self.current_requested_time, headers)
+        return self.validate(WithHeaders(headers))
 
-    @check
     def with_query_params(self, query_params: Dict[str, str]) -> "Statistic":
-        with_query_params(self.current_request, self.current_requested_time, query_params)
+        return self.validate(WithQueryParams(query_params))
 
     @property
     def current_request(self) -> RequestedParams:
@@ -147,3 +130,10 @@ class Statistic:
         self._error_messages = self._error_messages[0:1]
         self._number_of_requests_not_specify = True
         self._current_request_index = None
+
+    def validate(self, validator) -> "Statistic":
+        try:
+            validator.validate(self.current_request, self.current_requested_time)
+        except AssertionError as error:
+            self._error_messages.append(str(error))
+        return self
