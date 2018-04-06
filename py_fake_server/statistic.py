@@ -33,6 +33,10 @@ class Statistic:
     def requested_times(self) -> int:
         return len(self.requests)
 
+    @property
+    def current_requested_time(self) -> int:
+        return self._current_request_index + 1
+
     def exactly_once(self) -> "Statistic":
         return self.exactly_1_times()
 
@@ -78,68 +82,72 @@ class Statistic:
             return lambda: self
 
     def with_cookies(self, cookies: Dict[str, str]) -> "Statistic":
-        actual_cookies = self.get_current_request().cookies
+        actual_cookies = self.current_request.cookies
         if cookies != actual_cookies:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with cookies {cookies}.\n"
-                                        f"But for the {requested_time} time: cookies was {actual_cookies}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with cookies {cookies}.\n"
+                f"But for the {self.current_requested_time} time: cookies was {actual_cookies}."
+            )
         return self
 
     def with_body(self, body: str) -> "Statistic":
-        actual_body = self.get_current_request().body.decode("utf-8", errors="skip")
+        actual_body = self.current_request.body.decode("utf-8", errors="skip")
         if body != actual_body:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with body {body.__repr__()}.\n"
-                                        f"But for the {requested_time} time: body was {actual_body.__repr__()}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with body {body.__repr__()}.\n"
+                f"But for the {self.current_requested_time} time: body was {actual_body.__repr__()}."
+            )
         return self
 
     def with_json(self, json_dict: dict) -> "Statistic":
         body = json.dumps(json_dict, sort_keys=True)
 
-        actual_body = self.get_current_request().body.decode("utf-8", errors="skip")
+        actual_body = self.current_request.body.decode("utf-8", errors="skip")
         try:
             actual_json_dict = json.loads(actual_body)
         except json.JSONDecodeError:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with json {body}.\n"
-                                        f"But for the {requested_time} time: json was corrupted "
-                                        f"{actual_body.__repr__()}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with json {body}.\n"
+                f"But for the {self.current_requested_time} time: json was corrupted {actual_body.__repr__()}."
+            )
             return self
 
         actual_body = json.dumps(actual_json_dict, sort_keys=True)
         if body != actual_body:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with json {body}.\n"
-                                        f"But for the {requested_time} time: json was {actual_body}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with json {body}.\n"
+                f"But for the {self.current_requested_time} time: json was {actual_body}."
+            )
         return self
 
     def with_content_type(self, content_type: str) -> "Statistic":
-        actual_content_type = self.get_current_request().content_type
+        actual_content_type = self.current_request.content_type
         if content_type != actual_content_type:
-            requested_time = self._current_request_index + 1
             self._error_messages.append(
-                f"\nFor the {requested_time} time: with content type {content_type.__repr__()}.\n"
-                f"But for the {requested_time} time: content type was {actual_content_type.__repr__()}."
+                f"\nFor the {self.current_requested_time} time: with content type {content_type.__repr__()}.\n"
+                f"But for the {self.current_requested_time} time: content type was {actual_content_type.__repr__()}."
             )
         return self
 
     def with_files(self, files: Dict[str, bytes]) -> "Statistic":
-        actual_files = self.get_current_request().files
+        actual_files = self.current_request.files
         if files != actual_files:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with files {files}.\n"
-                                        f"But for the {requested_time} time: files was {actual_files}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with files {files}.\n"
+                f"But for the {self.current_requested_time} time: files was {actual_files}."
+            )
         return self
 
     def with_headers(self, headers: Dict[str, str]) -> "Statistic":
-        actual_headers = self.get_current_request().headers
+        actual_headers = self.current_request.headers
         expected_headers = {name.upper(): value for name, value in headers.items()}
 
         headers_diff = self._get_headers_diff(expected_headers, actual_headers)
         if headers_diff:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with headers contain {expected_headers}.\n"
-                                        f"But for the {requested_time} time: headers contained {headers_diff}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with headers contain {expected_headers}.\n"
+                f"But for the {self.current_requested_time} time: headers contained {headers_diff}."
+            )
         return self
 
     @staticmethod
@@ -155,18 +163,20 @@ class Statistic:
         return headers_diff
 
     def with_query_params(self, query_params: Dict[str, str]) -> "Statistic":
-        actual_query_params = self.get_current_request().query_params
+        actual_query_params = self.current_request.query_params
 
         if query_params != actual_query_params:
-            requested_time = self._current_request_index + 1
-            self._error_messages.append(f"\nFor the {requested_time} time: with query params {query_params}.\n"
-                                        f"But for the {requested_time} time: query params was {actual_query_params}.")
+            self._error_messages.append(
+                f"\nFor the {self.current_requested_time} time: with query params {query_params}.\n"
+                f"But for the {self.current_requested_time} time: query params was {actual_query_params}."
+            )
 
         return self
 
-    def get_current_request(self) -> RequestedParams:
+    @property
+    def current_request(self) -> RequestedParams:
         if self._current_request_index is None:
-            raise AttributeError("You should specify concrete request for check with 'for_the_<any_number>_time'")
+            raise AssertionError("You should specify concrete request for check with 'for_the_<any_number>_time'")
         return self.requests[self._current_request_index]
 
     def check(self) -> bool:
