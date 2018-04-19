@@ -27,10 +27,6 @@ class Statistic:
     def requested_times(self) -> int:
         return len(self.requests)
 
-    @property
-    def current_requested_time(self) -> int:
-        return self._current_request_index + 1
-
     def exactly_once(self) -> "Statistic":
         return self.exactly_1_times()
 

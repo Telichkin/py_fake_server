@@ -9,51 +9,35 @@ class Endpoint:
     def __init__(self, route: Route):
         self.method = route.method
         self.url = route.url
-        self._responses: List[Response] = []
-        self._last_response = None
-        self._called_times: int = 0
+        self._recorded_responses: List[Response] = []
+        self._error_response = Response(
+            status=500,
+            content_type="text/plain",
+            body=f"Server has not responses for [{self.method.upper()}] {self.url}",
+        )
+        self._last_recorded_response_is_infinite = True
 
-    @property
-    def status(self) -> int:
-        return self._current_response.status
+    def pop_response(self) -> Response:
+        if not self._recorded_responses:
+            return self._error_response
 
-    @property
-    def body(self) -> Optional[str]:
-        return self._current_response.body
+        if len(self._recorded_responses) == 1 and self._last_recorded_response_is_infinite:
+            return self._recorded_responses[0]
 
-    @property
-    def content_type(self) -> Optional[str]:
-        return self._current_response.content_type
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        return self._current_response.headers
-
-    @property
-    def cookies(self) -> Dict[str, str]:
-        return self._current_response.cookies
-
-    @property
-    def _current_response(self) -> Response:
-        if self._called_times > len(self._responses) - 1:
-            return self._last_response
-        return self._responses[self._called_times]
+        return self._recorded_responses.pop(0)
 
     def response(self, status: int, body: Optional[str] = None, content_type: Optional[str] = None,
                  headers: Optional[Dict[str, str]] = None, cookies: Optional[Dict[str, str]] = None,
                  json: Optional[Dict] = None) -> "Endpoint":
 
         response = Response(status, body, content_type, headers, cookies, json)
-        self._responses.append(response)
-        self._last_response = response
+        self._recorded_responses.append(response)
+        self._last_recorded_response_is_infinite = True
 
         return self
 
     def then(self) -> "Endpoint":
         return self
-
-    def called(self):
-        self._called_times += 1
 
     def once(self) -> "Endpoint":
         return self._1_times()
@@ -71,11 +55,7 @@ class Endpoint:
 
     def _times(self, number: int) -> "Endpoint":
         for i in range(number - 1):
-            self._responses.append(self._responses[-1])
+            self._recorded_responses.append(self._recorded_responses[0])
 
-        self._last_response = Response(
-            status=500,
-            content_type="text/plain",
-            body=f"Server has not responses for [{self.method.upper()}] {self.url}"
-        )
+        self._last_recorded_response_is_infinite = False
         return self

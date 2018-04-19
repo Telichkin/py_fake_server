@@ -1,4 +1,5 @@
 import json
+from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from py_fake_server.request import Request
@@ -9,9 +10,10 @@ class HeaderDoesNotExist:
         return "<HEADER DOES NOT EXIST>"
 
 
-class BaseValidator:
+class BaseValidator(metaclass=ABCMeta):
+    @abstractmethod
     def validate(self, request: Request):
-        raise NotImplementedError
+        pass
 
 
 class WithCookies(BaseValidator):

@@ -28,26 +28,22 @@ class FakeServer(falcon.API):
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
         route = Route(request.method, self.base_uri, request.path)
-        endpoint = self._endpoints.get(route, None)
-        if endpoint:
-            self._set_response_attributes_from_endpoint(response, endpoint)
-            endpoint.called()
-        else:
-            error_endpoint = Endpoint(route).once()
-            error_endpoint.called()
-            self._set_response_attributes_from_endpoint(response, error_endpoint)
+        endpoint = self._endpoints.get(route, Endpoint(route))
 
+        self._set_response_attributes_from_endpoint(response, endpoint)
         self._update_statistics(request, route)
 
     @staticmethod
     def _set_response_attributes_from_endpoint(response: falcon.Response, endpoint: Endpoint):
-        response.status = getattr(falcon, f"HTTP_{endpoint.status}")
-        response.body = endpoint.body
-        if endpoint.content_type:
-            response.content_type = endpoint.content_type
-        for header_name, header_value in endpoint.headers.items():
+        recorded_response = endpoint.pop_response()
+
+        response.status = getattr(falcon, f"HTTP_{recorded_response.status}")
+        response.body = recorded_response.body
+        if recorded_response.content_type:
+            response.content_type = recorded_response.content_type
+        for header_name, header_value in recorded_response.headers.items():
             response.set_header(header_name, header_value)
-        for cookie_name, cookie_value in endpoint.cookies.items():
+        for cookie_name, cookie_value in recorded_response.cookies.items():
             response.set_cookie(cookie_name, cookie_value)
 
     def _update_statistics(self, request: falcon.Request, route: Route):
