@@ -1,5 +1,5 @@
 beautifulsoup4==4.6.0
-certifi==2017.7.27.1
+certifi==2018.4.16
 chardet==3.0.4
 coverage==4.4.1
 docopt==0.6.2
@@ -7,7 +7,7 @@ falcon==1.2.0
 falcon-multipart==0.2.0
 hurry-script==0.2
 idna==2.6
-pkginfo==1.4.1
+pkginfo==1.4.2
 py==1.4.34
 pytest==3.2.1
 pytest-cov==2.5.1
@@ -15,8 +15,8 @@ python-mimeparse==1.6.0
 requests==2.18.4
 requests-toolbelt==0.8.0
 six==1.10.0
-tqdm==4.15.0
-twine==1.9.1
+tqdm==4.23.0
+twine==1.11.0
 urllib3==1.22
 waitress==1.0.2
 WebOb==1.7.3
