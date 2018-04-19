@@ -1,6 +1,8 @@
 import re
 from typing import Optional, List, Callable, Dict
 
+import falcon
+
 from py_fake_server.request import Request
 from py_fake_server.validators import (
     WithQueryParams, WithCookies, WithBody, WithJson,
@@ -16,6 +18,10 @@ class Statistic:
         self._current_request_index: Optional[int] = None
         self._number_of_requests_not_specify: bool = True
         self._error_messages: List[str] = [f"Expect that server was requested with [{method.upper()}] {url}."]
+
+    def record_request(self, request: falcon.Request):
+        request_number = self.requested_times + 1
+        self.requests.append(Request(request, request_number))
 
     @property
     def requested_times(self) -> int:

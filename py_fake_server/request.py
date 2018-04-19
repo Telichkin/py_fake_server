@@ -4,13 +4,14 @@ import falcon
 
 
 class Request:
-    def __init__(self, request: falcon.Request):
+    def __init__(self, request: falcon.Request, request_number: int):
         self.cookies: Optional[Dict[str, str]] = request.cookies
         self.body: Optional[bytes] = request.bounded_stream.read()
         self.content_type: Optional[str] = request.content_type
         self.files: Optional[Dict[str, bytes]] = self._get_files(request)
         self.headers: Optional[Dict[str, str]] = request.headers
         self.query_params: Optional[Dict[str, str]] = request.params
+        self.request_number = request_number
 
     @staticmethod
     def _get_files(request: falcon.Request) -> Optional[Dict[str, bytes]]:

@@ -53,7 +53,7 @@ class FakeServer(falcon.API):
     def _update_statistics(self, request: falcon.Request, route: Route):
         self._statistics.setdefault(route, Statistic(route.method, route.url))
         statistic = self._statistics.get(route)
-        statistic.requests.append(Request(request=request))
+        statistic.record_request(request)
 
     @property
     def base_uri(self):
