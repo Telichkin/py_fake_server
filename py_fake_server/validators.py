@@ -1,6 +1,8 @@
 import json
 from typing import Dict
 
+from py_fake_server.request import Request
+
 
 class HeaderDoesNotExist:
     def __repr__(self):
@@ -8,7 +10,7 @@ class HeaderDoesNotExist:
 
 
 class BaseValidator:
-    def validate(self, request, current_requested_time: int):
+    def validate(self, request: Request, current_requested_time: int):
         raise NotImplementedError
 
 

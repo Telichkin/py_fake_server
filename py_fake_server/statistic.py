@@ -1,29 +1,18 @@
 import re
 from typing import Optional, List, Callable, Dict
 
+from py_fake_server.request import Request
 from py_fake_server.validators import (
     WithQueryParams, WithCookies, WithBody, WithJson,
     WithContentType, WithFiles, WithHeaders, BaseValidator
 )
 
 
-class RequestedParams:
-    def __init__(self, cookies: Optional[Dict[str, str]], body: Optional[bytes], content_type: Optional[str],
-                 files: Optional[Dict[str, bytes]], headers: Optional[Dict[str, str]],
-                 query_params: Optional[Dict[str, str]]):
-        self.cookies = cookies
-        self.body = body
-        self.content_type = content_type
-        self.files = files
-        self.headers = headers
-        self.query_params = query_params
-
-
 class Statistic:
     def __init__(self, method: str, url: str):
         self.method: str = method
         self.url: str = url
-        self.requests: List[RequestedParams] = []
+        self.requests: List[Request] = []
         self._current_request_index: Optional[int] = None
         self._number_of_requests_not_specify: bool = True
         self._error_messages: List[str] = [f"Expect that server was requested with [{method.upper()}] {url}."]
@@ -102,7 +91,7 @@ class Statistic:
         return self.validate(WithQueryParams(query_params))
 
     @property
-    def current_request(self) -> RequestedParams:
+    def current_request(self) -> Request:
         if self._current_request_index is None:
             raise RuntimeError("You should specify concrete request for check with 'for_the_<any_number>_time'")
         return self.requests[self._current_request_index]

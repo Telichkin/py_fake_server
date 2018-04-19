@@ -6,7 +6,7 @@ from webtest.http import StopableWSGIServer
 
 from py_fake_server.route import Route
 from .endpoint import Endpoint
-from .statistic import Statistic, RequestedParams
+from .statistic import Statistic, Request
 
 
 class FakeServer(falcon.API):
@@ -53,22 +53,7 @@ class FakeServer(falcon.API):
     def _update_statistics(self, request: falcon.Request, route: Route):
         self._statistics.setdefault(route, Statistic(route.method, route.url))
         statistic = self._statistics.get(route)
-        statistic.requests.append(RequestedParams(cookies=request.cookies,
-                                                  body=request.bounded_stream.read(),
-                                                  content_type=request.content_type,
-                                                  files=self._get_files(request),
-                                                  headers=request.headers,
-                                                  query_params=request.params))
-
-    @staticmethod
-    def _get_files(request: falcon.Request) -> Optional[Dict[str, bytes]]:
-        files = {
-            param_name: param_value.file.read()
-            for param_name, param_value in request.params.items()
-            if hasattr(param_value, "file")
-        }
-
-        return files if files else None
+        statistic.requests.append(Request(request=request))
 
     @property
     def base_uri(self):
