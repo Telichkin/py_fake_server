@@ -11,7 +11,7 @@ class Request:
         self.files: Optional[Dict[str, bytes]] = self._get_files(request)
         self.headers: Optional[Dict[str, str]] = request.headers
         self.query_params: Optional[Dict[str, str]] = request.params
-        self.request_number = request_number
+        self.number = request_number
 
     @staticmethod
     def _get_files(request: falcon.Request) -> Optional[Dict[str, bytes]]:

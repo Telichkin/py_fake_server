@@ -6,7 +6,7 @@ from webtest.http import StopableWSGIServer
 
 from py_fake_server.route import Route
 from .endpoint import Endpoint
-from .statistic import Statistic, Request
+from .statistic import Statistic
 
 
 class FakeServer(falcon.API):

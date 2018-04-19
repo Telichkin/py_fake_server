@@ -128,7 +128,7 @@ class Statistic:
 
     def validate(self, validator: BaseValidator) -> "Statistic":
         try:
-            validator.validate(self.current_request, self.current_requested_time)
+            validator.validate(self.current_request)
         except AssertionError as error:
             self._error_messages.append(str(error))
         return self
