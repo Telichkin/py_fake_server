@@ -1,7 +1,7 @@
 import re
-import json as json_lib
-from typing import Optional, List, Callable, Dict
+from typing import Optional, List, Dict
 
+from py_fake_server.response import Response
 from py_fake_server.route import Route
 
 
@@ -9,67 +9,44 @@ class Endpoint:
     def __init__(self, route: Route):
         self.method = route.method
         self.url = route.url
-        self._statuses: List[Optional[int]] = []
-        self._bodies: List[Optional[str]] = []
-        self._content_types: List[Optional[str]] = []
-        self._headers_list: List[Dict] = []
-        self._cookies_list: List[Dict] = []
+        self._responses: List[Response] = []
+        self._last_response = None
         self._called_times: int = 0
-        self._last_endpoint_call_limited: bool = False
 
     @property
     def status(self) -> int:
-        return self._statuses[self._current_data_index]
+        return self._current_response.status
 
     @property
     def body(self) -> Optional[str]:
-        return self._bodies[self._current_data_index]
+        return self._current_response.body
 
     @property
     def content_type(self) -> Optional[str]:
-        return self._content_types[self._current_data_index]
+        return self._current_response.content_type
 
     @property
     def headers(self) -> Dict[str, str]:
-        return self._headers_list[self._current_data_index]
+        return self._current_response.headers
 
     @property
     def cookies(self) -> Dict[str, str]:
-        return self._cookies_list[self._current_data_index]
+        return self._current_response.cookies
 
     @property
-    def _current_data_index(self) -> int:
-        if self._called_times > len(self._statuses) - 1:
-            return len(self._statuses) - 1
-        return self._called_times
+    def _current_response(self) -> Response:
+        if self._called_times > len(self._responses) - 1:
+            return self._last_response
+        return self._responses[self._called_times]
 
     def response(self, status: int, body: Optional[str] = None, content_type: Optional[str] = None,
                  headers: Optional[Dict[str, str]] = None, cookies: Optional[Dict[str, str]] = None,
                  json: Optional[Dict] = None) -> "Endpoint":
-        if status == 204 and body is not None:
-            raise AttributeError("status == 204 and body != None in one response")
 
-        headers_names = [k.lower() for k in headers.keys()] if headers else []
-        if content_type and "content-type" in headers_names:
-            raise AttributeError("Explicit Content-Type and Content-Type in headers in one response")
-        if cookies and "cookies" in headers_names:
-            raise AttributeError("Explicit Cookies and Cookies in headers in one response")
-        if body is not None and json is not None:
-            raise AttributeError("'body' and 'json' in one response")
+        response = Response(status, body, content_type, headers, cookies, json)
+        self._responses.append(response)
+        self._last_response = response
 
-        if self._last_endpoint_call_limited:
-            self._statuses.pop()
-            self._bodies.pop()
-            self._content_types.pop()
-            self._headers_list.pop()
-            self._cookies_list.pop()
-            self._last_endpoint_call_limited = False
-
-        if json is not None:
-            content_type = content_type or "application/json"
-            body = json_lib.dumps(json)
-
-        self._append_data(status=status, body=body, content_type=content_type, headers=headers, cookies=cookies)
         return self
 
     def then(self) -> "Endpoint":
@@ -89,27 +66,16 @@ class Endpoint:
         regex_result = re.match(times_pattern, item)
         if regex_result:
             number = int(regex_result.groupdict()["number"])
-            return self._times(number)
+            return lambda: self._times(number)
         raise AttributeError(f"'Endpoint' object has no attribute '{item}'")
 
-    def _times(self, number: int) -> Callable[[], "Endpoint"]:
-        def times():
-            for i in range(number - 1):
-                self._append_data(status=self._statuses[-1], body=self._bodies[-1],
-                                  content_type=self._content_types[-1], headers=self._headers_list[-1],
-                                  cookies=self._cookies_list[-1])
+    def _times(self, number: int) -> "Endpoint":
+        for i in range(number - 1):
+            self._responses.append(self._responses[-1])
 
-            self._last_endpoint_call_limited = True
-            self._append_data(status=500, body=f"Server has not responses for [{self.method.upper()}] {self.url}",
-                              content_type="text/plain", headers={}, cookies={})
-            return self
-
-        return times
-
-    def _append_data(self, status: int, body: Optional[str], content_type: Optional[str], headers: Optional[Dict],
-                     cookies: Optional[Dict]):
-        self._statuses.append(status)
-        self._bodies.append(body)
-        self._content_types.append(content_type)
-        self._headers_list.append(headers or {})
-        self._cookies_list.append(cookies or {})
+        self._last_response = Response(
+            status=500,
+            content_type="text/plain",
+            body=f"Server has not responses for [{self.method.upper()}] {self.url}"
+        )
+        return self
