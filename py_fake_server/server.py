@@ -5,8 +5,8 @@ from falcon_multipart.middleware import MultipartMiddleware
 from webtest.http import StopableWSGIServer
 
 from py_fake_server.route import Route
-from .endpoint import Endpoint
-from .statistic import Statistic
+from py_fake_server.endpoint import Endpoint
+from py_fake_server.statistic import Statistic
 
 
 class FakeServer(falcon.API):
