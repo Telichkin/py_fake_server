@@ -1,19 +1,32 @@
 import json as json_lib
 from typing import Optional, Dict
+from .utils import UtilsMonitoring
+import logging
 
 
 class Response:
-    def __init__(self, status: int, body: Optional[str] = None, content_type: Optional[str] = None,
-                 headers: Optional[Dict[str, str]] = None, cookies: Optional[Dict[str, str]] = None,
-                 json: Optional[Dict] = None):
+    @UtilsMonitoring.io_display(input=True, output=False, level=logging.DEBUG)
+    def __init__(
+        self,
+        status: int,
+        body: Optional[str] = None,
+        content_type: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        cookies: Optional[Dict[str, str]] = None,
+        json: Optional[Dict] = None,
+    ):
         if status == 204 and body is not None:
             raise AttributeError("status == 204 and body != None in one response")
 
         headers_names = [k.lower() for k in headers.keys()] if headers else []
         if content_type and "content-type" in headers_names:
-            raise AttributeError("Explicit Content-Type and Content-Type in headers in one response")
+            raise AttributeError(
+                "Explicit Content-Type and Content-Type in headers in one response"
+            )
         if cookies and "cookies" in headers_names:
-            raise AttributeError("Explicit Cookies and Cookies in headers in one response")
+            raise AttributeError(
+                "Explicit Cookies and Cookies in headers in one response"
+            )
         if body is not None and json is not None:
             raise AttributeError("'body' and 'json' in one response")
 
@@ -26,3 +39,11 @@ class Response:
         self.content_type = content_type
         self.headers = headers or {}
         self.cookies = cookies or {}
+
+    def __str__(self):
+        return f"""<{Response.__name__} |
+        status : {self.status}
+        body : {self.body}
+        content_type : {self.content_type}
+        headers : {self.headers}
+        cookies : {self.cookies}>"""

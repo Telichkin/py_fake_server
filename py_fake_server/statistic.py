@@ -1,12 +1,19 @@
 import re
-from typing import Optional, List, Callable, Dict
+from typing import Optional, List, Callable, Dict, Tuple
+from urllib.parse import urlencode
 
 import falcon
 
 from py_fake_server.request import Request
 from py_fake_server.validators import (
-    WithQueryParams, WithCookies, WithBody, WithJson,
-    WithContentType, WithFiles, WithHeaders, BaseValidator
+    WithQueryParams,
+    WithCookies,
+    WithBody,
+    WithJson,
+    WithContentType,
+    WithFiles,
+    WithHeaders,
+    BaseValidator,
 )
 
 
@@ -17,7 +24,9 @@ class Statistic:
         self.requests: List[Request] = []
         self._current_request_index: Optional[int] = None
         self._number_of_requests_not_specify: bool = True
-        self._error_messages: List[str] = [f"Expect that server was requested with [{method.upper()}] {url}."]
+        self._error_messages: List[str] = [
+            f"Expect that server was requested with [{method.upper()}] {url}."
+        ]
 
     def record_request(self, request: falcon.Request):
         request_number = self.requested_times + 1
@@ -54,18 +63,24 @@ class Statistic:
 
         raise AttributeError(f"'Statistic' object has no attribute '{item}'")
 
-    def _exactly_times(self, expected_requested_times: int) -> Callable[[], "Statistic"]:
+    def _exactly_times(
+        self, expected_requested_times: int
+    ) -> Callable[[], "Statistic"]:
         self._number_of_requests_not_specify = False
         if expected_requested_times != self.requested_times:
-            self._error_messages.append(f" {expected_requested_times} times.\n"
-                                        f"But server was requested {self.requested_times} times.")
+            self._error_messages.append(
+                f" {expected_requested_times} times.\n"
+                f"But server was requested {self.requested_times} times."
+            )
             self._raise_assertion()
         return lambda: self
 
     def _for_the_time(self, times: int) -> Callable[[], "Statistic"]:
         if self.requested_times < times:
-            self._error_messages.append(f" At least {times} times.\n"
-                                        f"But server was requested {self.requested_times} times.")
+            self._error_messages.append(
+                f" At least {times} times.\n"
+                f"But server was requested {self.requested_times} times."
+            )
             self._raise_assertion()
         else:
             self._current_request_index = times - 1
@@ -95,7 +110,9 @@ class Statistic:
     @property
     def current_request(self) -> Request:
         if self._current_request_index is None:
-            raise RuntimeError("You should specify concrete request for check with 'for_the_<any_number>_time'")
+            raise RuntimeError(
+                "You should specify concrete request for check with 'for_the_<any_number>_time'"
+            )
         return self.requests[self._current_request_index]
 
     def check(self) -> bool:
@@ -128,3 +145,6 @@ class Statistic:
         except AssertionError as error:
             self._error_messages.append(str(error))
         return self
+
+    def __str__(self):
+        return f"<{Statistic.__name__} | {self.method} {self.url} with {len(self.requests)} requests>"

@@ -1,1 +1,6 @@
 .coverage
+__pycache__/
+.eggs/
+dist/
+build/
+py_fake_server.egg-info
