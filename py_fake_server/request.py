@@ -22,3 +22,13 @@ class Request:
         }
 
         return files if files else None
+
+    def __str__(self):
+        return f"""<{Request.__name__} |
+        cookies = {self.cookies}
+        body = {self.body}
+        content_type = {self.content_type}
+        files = {self.files}
+        headers = {self.headers}
+        query_params = {self.query_params}
+        number = {self.number}>"""

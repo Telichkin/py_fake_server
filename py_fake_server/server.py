@@ -1,15 +1,21 @@
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, List, Tuple
 
 import falcon
 from falcon_multipart.middleware import MultipartMiddleware
 from webtest.http import StopableWSGIServer
-
+from py_fake_server import statistic
+from .utils import UtilsMonitoring
 from py_fake_server.route import Route
 from py_fake_server.endpoint import Endpoint
 from py_fake_server.statistic import Statistic
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FakeServer(falcon.API):
+    @UtilsMonitoring.io_display(input=True, output=False, level=logging.DEBUG)
     def __init__(self, host: str, port: int):
         super().__init__(middleware=[MultipartMiddleware()])
         self.req_options = self._get_request_options()
@@ -28,13 +34,18 @@ class FakeServer(falcon.API):
 
     def _handle_all(self, request: falcon.Request, response: falcon.Response):
         route = Route(request.method, self.base_uri, request.path)
-        endpoint = self._endpoints.get(route, Endpoint(route))
-
-        self._set_response_attributes_from_endpoint(response, endpoint)
+        endpoint = self._endpoints.get(route, Endpoint(route, request.params))
+        logger.debug(f"Checking {endpoint.params} vs {request.params}")
+        if endpoint.params == request.params:
+            self._set_response_attributes_from_endpoint(response, endpoint)
+        else:
+            response.status = getattr(falcon, f"HTTP_400")
         self._update_statistics(request, route)
 
     @staticmethod
-    def _set_response_attributes_from_endpoint(response: falcon.Response, endpoint: Endpoint):
+    def _set_response_attributes_from_endpoint(
+        response: falcon.Response, endpoint: Endpoint
+    ):
         recorded_response = endpoint.pop_response()
 
         response.status = getattr(falcon, f"HTTP_{recorded_response.status}")
@@ -48,8 +59,12 @@ class FakeServer(falcon.API):
 
     def _update_statistics(self, request: falcon.Request, route: Route):
         self._statistics.setdefault(route, Statistic(route.method, route.url))
-        statistic = self._statistics.get(route)
-        statistic.record_request(request)
+        statistic: Union[Statistic, None] = self._statistics.get(route)
+        if statistic is None:
+            logger.error(f"Uknown route, {route}, when getting statistic")
+            raise ValueError(f"Uknown route: {route}")
+        else:
+            statistic.record_request(request)
 
     @property
     def base_uri(self):
@@ -57,33 +72,63 @@ class FakeServer(falcon.API):
 
     def start(self):
         self._server = StopableWSGIServer.create(self, host=self._host, port=self._port)
+        logger.info(f"Starting {__name__} on {self._host}:{self._port}")
 
     def stop(self):
-        self._server.shutdown()
+        if self._server is not None:
+            self._server.shutdown()
+            logger.info(f"Stopping {__name__}")
+        else:
+            logger.warning(f"{__name__} is already stopped !")
 
     def clear(self):
         self._endpoints = {}
         self._statistics = {}
 
-    def on_(self, method: str, url: str) -> Endpoint:
+    @UtilsMonitoring.io_display(input=True, output=True, level=logging.DEBUG)
+    def on_(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Union[str, List[str]]]] = None,
+    ) -> Endpoint:
         route = Route(method, self.base_uri, url)
-        new_endpoint = Endpoint(route)
+        new_endpoint = Endpoint(route, params)
         self._endpoints[route] = new_endpoint
         return new_endpoint
 
-    def was_requested(self, method: str, url: str) -> Statistic:
+    @UtilsMonitoring.io_display(input=True, output=True, level=logging.DEBUG)
+    def was_requested(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Union[str, List[str]]]] = None,
+    ) -> Statistic:
         route = Route(method, self.base_uri, url)
         self._statistics.setdefault(route, Statistic(route.method, route.url))
-        return self._statistics.get(route)
+        statistic: Union[Statistic, None] = self._statistics.get(route)
+        if statistic is None:
+            raise ValueError(f"Uknown route: {route}")
+        return statistic
 
-    def was_not_requested(self, method: str, url: str) -> Statistic:
+    @UtilsMonitoring.io_display(input=True, output=True, level=logging.DEBUG)
+    def was_not_requested(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Union[str, List[str]]]] = None,
+    ) -> Statistic:
         route = Route(method, self.base_uri, url)
         self._statistics.setdefault(route, Statistic(route.method, route.url))
-        statistic: Statistic = self._statistics.get(route)
+        statistic: Union[Statistic, None] = self._statistics.get(route)
+        if statistic is None:
+            logger.error(f"Uknown route: {route} when getting statistic")
+            raise ValueError(f"Uknown route: {route}")
         statistic.exactly_0_times()
         return statistic
 
 
+@UtilsMonitoring.io_display(input=True, output=True, level=logging.DEBUG)
 def expect_that(expectation: Union[FakeServer, Statistic]):
     if isinstance(expectation, FakeServer):
         return expectation

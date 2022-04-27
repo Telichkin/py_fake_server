@@ -1,6 +1,9 @@
 import pytest
-
+import logging
 from py_fake_server import FakeServer
+
+logger = logging.getLogger("py_fake_server")
+logger.setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
